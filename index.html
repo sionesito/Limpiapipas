@@ -3,186 +3,322 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Catálogo Flipbook - Limpiapipas</title>
+<title>Catálogo Flip - Limpiapipas</title>
+<meta name="description" content="Catálogo hojeable - Limpiapipas. Hojea y pide por WhatsApp.">
 <style>
-  :root{--bg:#f3f4f6;--paper:#fff;--accent:#0f62fe}
-  body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:var(--bg);color:#111}
-  .wrap{max-width:980px;margin:28px auto;padding:14px}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  header h1{font-size:20px;margin:0}
-  .viewer{background:linear-gradient(180deg,#fff,#fafafa);border-radius:8px;box-shadow:0 8px 30px rgba(2,6,23,.08);padding:18px}
-  .book{width:100%;height:600px;display:flex;align-items:center;justify-content:center;position:relative}
-  .page{width:47%;height:540px;background:var(--paper);box-shadow:0 4px 12px rgba(2,6,23,.06);border-radius:6px;padding:18px;box-sizing:border-box;overflow:hidden}
-  .page img{width:100%;height:340px;object-fit:cover;border-radius:6px}
-  .page h2{margin:10px 0 6px;font-size:18px}
-  .page p{margin:0;font-size:13px;color:#444}
-  .pager{position:absolute;left:10px;right:10px;bottom:12px;display:flex;justify-content:space-between;align-items:center}
-  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
-  .btn.secondary{background:#fff;color:var(--accent);border:1px solid rgba(15,98,254,.14)}
-  .controls{position:absolute;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;pointer-events:none}
-  .controls button{pointer-events:auto;background:rgba(0,0,0,.06);border:0;padding:12px;border-radius:50%;cursor:pointer}
-  .meta{display:flex;gap:8px;align-items:center}
-  .thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .thumbs img{width:86px;height:86px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent}
-  .thumbs img.active{border-color:var(--accent)}
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:60}
-  .modal.open{display:flex}
-  .modal .card{width:92%;max-width:900px;background:#fff;border-radius:10px;padding:12px}
-  .modal header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .whatsapp{background:#25D366;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
-  @media (max-width:900px){
-    .book{flex-direction:column;height:auto}
-    .page{width:100%;height:auto;margin-bottom:10px}
+  :root{
+    --bg:#f3f4f6;
+    --paper:#ffffff;
+    --accent:#0f62fe;
+    --muted:#6b7280;
+    --shadow: 0 8px 30px rgba(2,6,23,.08);
   }
-  footer{max-width:980px;margin:8px auto;text-align:center;color:#666;font-size:13px}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,Helvetica,sans-serif;background:var(--bg);color:#111}
+  .container{max-width:1200px;margin:20px auto;padding:16px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  header img.logo{width:56px;height:56px;border-radius:8px;object-fit:cover}
+  header h1{margin:0;font-size:20px}
+  header .meta{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .whatsapp-btn{background:#25D366;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:600}
+
+  /* Book area */
+  .book-wrap{background:linear-gradient(180deg,#fff,#fbfdff);padding:18px;border-radius:10px;box-shadow:var(--shadow)}
+  .book{position:relative;height:620px;display:flex;align-items:center;justify-content:center;perspective:2000px}
+  .page{
+    position:absolute;
+    width:880px;
+    height:560px;
+    left:50%;
+    transform-style:preserve-3d;
+    transform-origin:left center;
+    translate:-50% 0;
+    transition: transform 700ms cubic-bezier(.2,.9,.3,1);
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--paper);
+    display:flex;
+  }
+  .page .side{width:50%;height:100%;padding:18px;box-sizing:border-box}
+  .page .side img{width:100%;height:350px;object-fit:cover;border-radius:6px}
+  .page .side h2{margin:12px 0 6px;font-size:18px}
+  .page .side p{margin:0;color:var(--muted)}
+  .page .price{font-weight:700;margin-top:10px}
+
+  /* stacking for pages */
+  .page[data-state="stacked"]{transform: rotateY(0deg) translateX(-50%); z-index:50}
+  .page[data-state="flipped"]{transform: rotateY(-180deg) translateX(-50%); z-index:10}
+
+  /* left pages open origin */
+  .page[data-side="left"]{transform-origin:right center}
+  .page[data-side="left"][data-state="flipped"]{transform: rotateY(180deg) translateX(-50%);}
+
+  /* controls */
+  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .controls .nav{display:flex;gap:8px}
+  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+  .btn.ghost{background:#fff;color:var(--accent);border:1px solid rgba(15,98,254,.14)}
+
+  /* thumbnails */
+  .thumbs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .thumbs img{width:96px;height:96px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .thumbs img.active{border-color:var(--accent)}
+
+  /* small screens */
+  @media (max-width:1000px){
+    .page{width:640px;height:520px}
+    .page .side img{height:300px}
+  }
+  @media (max-width:720px){
+    .page{width:92%;height:auto;position:static;transform:none;display:block}
+    .page .side{width:100%;padding:12px}
+    .book{perspective:unset}
+  }
+
+  /* Modal 3D and zoom */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modal.open{display:flex}
+  .modal .card{background:#fff;border-radius:10px;max-width:960px;width:96%;padding:12px}
+  .zoom{position:fixed;right:18px;top:18px;background:#fff;border-radius:8px;padding:6px;box-shadow:var(--shadow)}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="container">
   <header>
-    <img src="images/p1-cover.jpg" alt="logo" style="width:56px;height:56px;border-radius:8px;object-fit:cover"/>
+    <img class="logo" src="images/p1-cover.jpg" alt="logo">
     <div>
       <h1>Catálogo - Flores Limpiapipas</h1>
-      <small style="color:#666">Hojea y comparte por WhatsApp</small>
+      <div style="color:var(--muted)">Hojea y pide por WhatsApp</div>
     </div>
-    <div style="margin-left:auto" class="meta">
-      <a id="shareWa" class="whatsapp" href="#" target="_blank">Pedir por WhatsApp</a>
+
+    <div class="meta">
+      <a id="shareWaTop" class="whatsapp-btn" href="#" target="_blank">Pedir por WhatsApp</a>
     </div>
   </header>
 
-  <div class="viewer">
-    <div class="book" id="book">
-      <div class="page" id="leftPage">
-        <img id="leftImg" src="images/p1-cover.jpg" alt="portada">
-        <h2 id="leftTitle">Ramo 1</h2>
-        <p id="leftDesc">Descripción corta</p>
-        <div style="margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:space-between">
-          <div style="font-weight:700" id="leftPrice">$350 MXN</div>
-          <div>
-            <button class="btn" onclick="open3D()">Ver 3D</button>
-            <button class="btn secondary" onclick="addToCart()">Añadir</button>
-          </div>
-        </div>
+  <div class="book-wrap">
+    <div class="book" id="book"></div>
+
+    <div class="controls">
+      <div class="nav">
+        <button id="prev" class="btn ghost">❮ Anterior</button>
+        <button id="next" class="btn">Siguiente ❯</button>
       </div>
 
-      <div style="width:6%"></div>
-
-      <div class="page" id="rightPage">
-        <img id="rightImg" src="images/p2-cover.jpg" alt="detalle">
-        <h2 id="rightTitle">Ramo 2</h2>
-        <p id="rightDesc">Descripción corta</p>
-        <div style="margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:space-between">
-          <div style="font-weight:700" id="rightPrice">$420 MXN</div>
-          <div>
-            <button class="btn" onclick="open3D()">Ver 3D</button>
-            <button class="btn secondary" onclick="addToCart()">Añadir</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <button id="prevBtn" title="Anterior" onclick="prevPage()">❮</button>
-        <button id="nextBtn" title="Siguiente" onclick="nextPage()">❯</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="downloadPDF" class="btn ghost">Descargar PDF</button>
+        <button id="shareLink" class="btn ghost">Compartir</button>
       </div>
     </div>
 
-    <div class="pager">
-      <div class="thumbs" id="thumbs">
-      </div>
-
-      <div style="display:flex;gap:8px">
-        <button class="btn secondary" onclick="downloadPDF()">Descargar PDF</button>
-        <button class="btn" onclick="openShare()">Compartir</button>
-      </div>
-    </div>
+    <div class="thumbs" id="thumbs"></div>
   </div>
 </div>
 
 <!-- Modal 3D -->
 <div class="modal" id="modal3d" aria-hidden="true">
   <div class="card">
-    <header>
-      <div>
-        <strong id="modalTitle">Ramo</strong>
-        <div style="font-size:12px;color:#666" id="modalPrice">$0 MXN</div>
-      </div>
-      <button onclick="close3D()">Cerrar ✕</button>
+    <header style="display:flex;justify-content:space-between;align-items:center">
+      <strong id="modalTitle">Producto</strong>
+      <button onclick="closeModal()">Cerrar ✕</button>
     </header>
-
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <model-viewer id="modelViewer" src="" alt="3D model" ar ar-modes="scene-viewer quick-look webxr" camera-controls auto-rotate style="width:100%;height:520px;background:#f7f7f7"></model-viewer>
+    <div style="margin-top:8px">
+      <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+      <model-viewer id="modelViewer" alt="3D" camera-controls auto-rotate style="width:100%;height:520px;background:#f7f7f7"></model-viewer>
+    </div>
   </div>
 </div>
 
-<footer>Hecho con ❤️ por Limpiapipas — comparte el catálogo por WhatsApp</footer>
-
 <script>
-const waNumber = '5215512345678'; // <--- cambia esto por tu número real
+/* ---------------------------
+   CONFIGURA AQUI TU NÚMERO WA
+   --------------------------- */
+const waNumber = '5215571113009'; // <- tu número (ya puesto)
 
+/* ======== Productos (edítalos) =========
+ imgA = imagen principal; imgB = imagen secundaria (para la otra página).
+ Añade o quita objetos según necesites.
+*/
 const products = [
-  { title:'Ramo 1', desc:'Bonito ramo pequeño', price:350, imgA:'images/p1-cover.jpg', imgB:'images/p1-2.jpg', glb:'' },
-  { title:'Ramo 2', desc:'Ramo mediano', price:420, imgA:'images/p2-cover.jpg', imgB:'images/p2-2.jpg', glb:'' },
-  { title:'Ramo 3', desc:'Ramo color', price:320, imgA:'images/p3-cover.jpg', imgB:'images/p3-2.jpg', glb:'' },
-  { title:'Ramo 4', desc:'Ramo para regalo', price:480, imgA:'images/p4-cover.jpg', imgB:'images/p4-2.jpg', glb:'' },
-  { title:'Ramo 5', desc:'Bouquet especial', price:600, imgA:'images/p5-cover.jpg', imgB:'images/p5-2.jpg', glb:'' }
+  { title:'Ramo 1', desc:'8 rosas + eucalipto. Empaque rústico.', price:350, imgA:'images/p1-cover.jpg', imgB:'images/p1-2.jpg', glb:'' },
+  { title:'Ramo 2', desc:'Ramo mediano con flores de temporada.', price:420, imgA:'images/p2-cover.jpg', imgB:'images/p2-2.jpg', glb:'' },
+  { title:'Ramo 3', desc:'Ramo colorido', price:320, imgA:'images/p3-cover.jpg', imgB:'images/p3-2.jpg', glb:'' },
+  { title:'Ramo 4', desc:'Para regalo especial', price:480, imgA:'images/p4-cover.jpg', imgB:'images/p4-2.jpg', glb:'' },
+  { title:'Ramo 5', desc:'Bouquet premium', price:600, imgA:'images/p5-cover.jpg', imgB:'images/p5-2.jpg', glb:'' }
 ];
 
-let pageIndex = 0;
+/* ---------------------------
+   GENERAR LA "REVISTA" DINÁMICA
+   Cada producto ocupa dos mitades (lado derecho/izquierdo).
+   Las "pages" se apilan y se voltean simulando un libro.
+--------------------------- */
+const bookEl = document.getElementById('book');
+const thumbsEl = document.getElementById('thumbs');
+const shareTop = document.getElementById('shareWaTop');
+let currentSpread = 0; // índice de producto (cada item -> spread)
 
-function renderPages(){
-  const left = products[pageIndex] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'}
-  const right = products[pageIndex+1] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'}
-  document.getElementById('leftImg').src = left.imgA; document.getElementById('leftTitle').innerText = left.title; document.getElementById('leftDesc').innerText = left.desc;
-  document.getElementById('leftPrice').innerText = '$'+left.price+' MXN';
-  document.getElementById('rightImg').src = right.imgA; document.getElementById('rightTitle').innerText = right.title; document.getElementById('rightDesc').innerText = right.desc;
-  document.getElementById('rightPrice').innerText = right.price ? '$'+right.price+' MXN' : '';
-  const sample = (left.title || 'Consulta');
-  const message = encodeURIComponent('Hola, quiero pedir: '+sample+' - ¿tienen en existencia?');
-  document.getElementById('shareWa').href = `https://wa.me/${waNumber}?text=${message}`;
-  document.querySelectorAll('#thumbs img').forEach(img=>img.classList.remove('active'));
-  const t = document.querySelector('#thumbs img[data-index="'+pageIndex+'"]'); if(t) t.classList.add('active');
+// función para crear una página (spread) que contiene dos "lados"
+function createSpread(idx){
+  const prod = products[idx] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'};
+  const page = document.createElement('div');
+  page.className = 'page';
+  page.dataset.index = idx;
+  page.dataset.state = 'stacked'; // stacked or flipped
+  // left side (for visual - when mobile it stacks)
+  const left = document.createElement('div');
+  left.className = 'side';
+  const imgL = document.createElement('img'); imgL.src = prod.imgA; imgL.alt = prod.title;
+  left.appendChild(imgL);
+  const tL = document.createElement('h2'); tL.innerText = prod.title; left.appendChild(tL);
+  const pL = document.createElement('p'); pL.innerText = prod.desc; left.appendChild(pL);
+  const priceL = document.createElement('div'); priceL.className = 'price'; priceL.innerText = '$'+prod.price+' MXN'; left.appendChild(priceL);
+
+  // right side
+  const right = document.createElement('div');
+  right.className = 'side';
+  const imgR = document.createElement('img'); imgR.src = prod.imgB; imgR.alt = prod.title+' detalle';
+  right.appendChild(imgR);
+  const tR = document.createElement('h2'); tR.innerText = prod.title; right.appendChild(tR);
+  const pR = document.createElement('p'); pR.innerText = prod.desc; right.appendChild(pR);
+  const priceR = document.createElement('div'); priceR.className = 'price'; priceR.innerText = '$'+prod.price+' MXN'; right.appendChild(priceR);
+
+  page.appendChild(left);
+  page.appendChild(right);
+
+  // set side orientation: even index -> right origin, odd -> left origin (for stacking)
+  if(idx % 2 === 0){
+    page.dataset.side = 'right';
+    page.style.transformOrigin = 'left center';
+  } else {
+    page.dataset.side = 'left';
+    page.style.transformOrigin = 'right center';
+  }
+
+  // click to open 3D modal on image
+  imgL.style.cursor = imgR.style.cursor = 'pointer';
+  imgL.onclick = () => openModal(idx);
+  imgR.onclick = () => openModal(idx);
+
+  return page;
 }
 
-function nextPage(){ if(pageIndex+2 < products.length) pageIndex += 2; renderPages(); }
-function prevPage(){ if(pageIndex-2 >= 0) pageIndex -= 2; renderPages(); }
-function goTo(idx){ pageIndex = idx; renderPages(); }
-function openShare(){ window.open(document.getElementById('shareWa').href,'_blank') }
-function addToCart(){ alert('Añadido al carrito (demo)') }
+// create spreads and thumbs
+for(let i=0;i<products.length;i++){
+  const sp = createSpread(i);
+  // z-index stacking: later pages below earlier ones
+  sp.style.zIndex = (100 - i);
+  bookEl.appendChild(sp);
 
-function open3D(){
-  const prod = products[pageIndex] || products[0];
-  const modal = document.getElementById('modal3d');
-  document.getElementById('modalTitle').innerText = prod.title;
-  document.getElementById('modalPrice').innerText = '$'+prod.price+' MXN';
+  // thumb
+  const th = document.createElement('img');
+  th.src = products[i].imgA;
+  th.dataset.index = i;
+  th.onclick = ()=>goToSpread(i);
+  if(i===0) th.classList.add('active');
+  thumbsEl.appendChild(th);
+}
+
+// navigation handlers
+document.getElementById('next').onclick = ()=>{ flipNext(); }
+document.getElementById('prev').onclick = ()=>{ flipPrev(); }
+document.getElementById('shareLink').onclick = ()=>{ navigator.clipboard.writeText(location.href).then(()=>alert('Link copiado al portapapeles')); }
+document.getElementById('downloadPDF').onclick = ()=>{ window.print(); }
+
+// update share link button
+function updateShareLink(){
+  const sample = products[currentSpread] ? products[currentSpread].title : 'Consulta';
+  const message = encodeURIComponent('Hola, quiero pedir: '+sample+' - ¿tienen en existencia?');
+  shareTop.href = `https://wa.me/${waNumber}?text=${message}`;
+}
+updateShareLink();
+
+// flipping logic
+function flipNext(){
+  const max = products.length - 1;
+  if(currentSpread < max){
+    const page = bookEl.querySelector('.page[data-index="'+currentSpread+'"]');
+    if(page){
+      page.dataset.state = 'flipped';
+      // update thumb active
+      const next = currentSpread+1;
+      setActiveThumb(next);
+      currentSpread++;
+      updateShareLink();
+    }
+  } else {
+    // loop to start
+    // optional: alert('Llegaste al final');
+  }
+}
+function flipPrev(){
+  if(currentSpread > 0){
+    const prevIndex = currentSpread-1;
+    const page = bookEl.querySelector('.page[data-index="'+prevIndex+'"]');
+    if(page){
+      page.dataset.state = 'stacked';
+      setActiveThumb(prevIndex);
+      currentSpread = prevIndex;
+      updateShareLink();
+    }
+  } else {
+    // at start
+  }
+}
+function goToSpread(i){
+  // simple approach: unflip pages before i and flip those < i
+  products.forEach((p, idx)=> {
+    const pg = bookEl.querySelector('.page[data-index="'+idx+'"]');
+    if(!pg) return;
+    if(idx < i) pg.dataset.state = 'flipped';
+    else pg.dataset.state = 'stacked';
+  });
+  setActiveThumb(i);
+  currentSpread = i;
+  updateShareLink();
+}
+function setActiveThumb(i){
+  document.querySelectorAll('#thumbs img').forEach(img=>img.classList.remove('active'));
+  const t = document.querySelector('#thumbs img[data-index="'+i+'"]');
+  if(t) t.classList.add('active');
+}
+
+/* Modal 3D logic */
+const modal = document.getElementById('modal3d');
+function openModal(idx){
+  const prod = products[idx];
+  document.getElementById('modalTitle').innerText = prod.title + ' — $' + prod.price + ' MXN';
   const mv = document.getElementById('modelViewer');
   if(prod.glb && prod.glb.length>0){
     mv.src = prod.glb;
   } else {
-    mv.src = '';
+    // no glb: show primary image
+    mv.src = ''; // empty
+    // we can replace the model-viewer with an image fallback if desired
+    // simple fallback alert:
+    alert('No hay modelo 3D para este producto. Mostrando imagen en el catálogo.');
   }
   modal.classList.add('open');
   modal.setAttribute('aria-hidden','false');
 }
-function close3D(){ const modal = document.getElementById('modal3d'); modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
 
-function downloadPDF(){
-  alert('Para PDF final y profesional usa Canva o Google Slides. Esta opción abre imprimir (guardar como PDF desde navegador).');
-  window.print();
-}
+/* keyboard support */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight') flipNext();
+  if(e.key === 'ArrowLeft') flipPrev();
+  if(e.key === 'Escape') closeModal();
+});
 
-(function initThumbs(){
-  const thumbs = document.getElementById('thumbs');
-  thumbs.innerHTML = '';
-  for(let i=0;i<products.length;i++){
-    const img = document.createElement('img');
-    img.src = products[i].imgA;
-    img.dataset.index = i;
-    img.onclick = ()=>goTo(i);
-    if(i===0) img.classList.add('active');
-    thumbs.appendChild(img);
-  }
-  renderPages();
-})(); 
+/* touch swipe support for mobile */
+let touchStartX = 0;
+bookEl.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; }, {passive:true});
+bookEl.addEventListener('touchend', (e)=>{
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if(dx < -40) flipNext();
+  if(dx > 40) flipPrev();
+}, {passive:true});
+
 </script>
 </body>
 </html>
