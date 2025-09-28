@@ -3,341 +3,229 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Catálogo Flip - Limpiapipas</title>
-<meta name="description" content="Catálogo hojeable - Limpiapipas. Hojea y pide por WhatsApp.">
+<title>Catálogo — LimpiaPipas</title>
 <style>
-  :root{
-    --bg:#f3f4f6;
-    --paper:#ffffff;
-    --accent:#0f62fe;
-    --muted:#6b7280;
-    --shadow: 0 8px 30px rgba(2,6,23,.08);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:Inter,system-ui,Segoe UI,Arial,Helvetica,sans-serif;background:var(--bg);color:#111}
-  .container{max-width:1200px;margin:20px auto;padding:16px}
-  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-  header img.logo{width:56px;height:56px;border-radius:8px;object-fit:cover}
-  header h1{margin:0;font-size:20px}
-  header .meta{margin-left:auto;display:flex;gap:8px;align-items:center}
-  .whatsapp-btn{background:#25D366;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:600}
-
-  /* Book area */
-  .book-wrap{background:linear-gradient(180deg,#fff,#fbfdff);padding:18px;border-radius:10px;box-shadow:var(--shadow)}
-  .book{position:relative;height:620px;display:flex;align-items:center;justify-content:center;perspective:2000px}
-  .page{
-    position:absolute;
-    width:880px;
-    height:560px;
-    left:50%;
-    transform-style:preserve-3d;
-    transform-origin:left center;
-    translate:-50% 0;
-    box-shadow: 0 6px 18px rgba(0,0,0,.08);
-    border-radius:6px;
-    overflow:hidden;
-    background:var(--paper);
+  /* Reset sencillo */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;}
+  body{
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:#111;
+    color:#fff;
     display:flex;
-    will-change: transform, opacity;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
   }
-  .page .side{width:50%;height:100%;padding:18px;box-sizing:border-box}
-  .page .side img{width:100%;height:350px;object-fit:cover;border-radius:6px}
-  .page .side h2{margin:12px 0 6px;font-size:18px}
-  .page .side p{margin:0;color:var(--muted)}
-  .page .price{font-weight:700;margin-top:10px}
 
-  /* -------------------
-     FIX: usar slide en vez de rotateY para evitar reversos invertidos
-     ------------------- */
+  /* Contenedor del catálogo */
+  .catalog {
+    width:100%;
+    max-width:1100px;
+    background:linear-gradient(180deg,#0f1720 0%, #071019 100%);
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+    overflow:hidden;
+  }
+
+  /* Área visible (viewport de páginas) */
+  .viewport {
+    position:relative;
+    width:100%;
+    height:70vh;
+    min-height:420px;
+    overflow:hidden; /* importante para evitar "hojas" fuera */
+    background: #0b1220;
+  }
+
+  /* Wrapper de páginas en fila */
+  .pages {
+    display:flex;
+    height:100%;
+    transition:transform 450ms cubic-bezier(.22,.9,.28,1);
+    will-change:transform;
+  }
+
+  /* Cada página (toma toda la vista) */
   .page {
-    transition: transform 600ms cubic-bezier(.2,.9,.3,1), opacity 400ms ease;
+    min-width:100%;
+    height:100%;
+    padding:18px;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    justify-content:flex-start;
+    overflow:hidden;
   }
 
-  /* estado normal: página en su lugar (visibilidad completa) */
-  .page[data-state="stacked"]{
-    transform: translateX(-50%) translateZ(0) rotateY(0deg);
-    opacity: 1;
-    z-index: 50;
-    pointer-events: auto;
+  /* Tarjeta de producto dentro de la página */
+  .card {
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border-radius:10px;
+    padding:12px;
+    box-shadow:0 6px 18px rgba(2,6,23,0.5);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    width:100%;
+    max-width:320px;
   }
 
-  /* estado "flipped" ahora la empuja a la izquierda y la oculta suavemente */
-  .page[data-state="flipped"]{
-    transform: translateX(-170%) translateZ(0) scale(.98);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 10;
+  .card img{
+    width:100%;
+    height:260px;
+    object-fit:cover; /* evita que se distorsione la imagen */
+    border-radius:8px;
+    display:block;
+    background:#222;
   }
 
-  /* left/right origin preserved but slide handles the hide */
-  .page[data-side="left"]{ transform-origin:right center; }
-  .page[data-side="right"]{ transform-origin:left center; }
+  .card h3{font-size:1.05rem;margin-top:6px}
+  .card p{font-size:.92rem;color:rgba(255,255,255,0.78)}
+  .card .price{margin-top:auto;font-weight:700;font-size:1.05rem}
 
-  /* controls */
-  .controls{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
-  .controls .nav{display:flex;gap:8px}
-  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
-  .btn.ghost{background:#fff;color:var(--accent);border:1px solid rgba(15,98,254,.14)}
-
-  /* thumbnails */
-  .thumbs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .thumbs img{width:96px;height:96px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent}
-  .thumbs img.active{border-color:var(--accent)}
-
-  /* small screens */
-  @media (max-width:1000px){
-    .page{width:640px;height:520px}
-    .page .side img{height:300px}
+  /* Controles */
+  .controls{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 18px;
+    background:rgba(0,0,0,0.12);
   }
-  @media (max-width:720px){
-    .page{width:92%;height:auto;position:static;transform:none;display:block}
-    .page .side{width:100%;padding:12px}
-    .book{perspective:unset}
+  .controls .nav{
+    display:flex;gap:8px;
   }
+  button{
+    background:#06b6d4;
+    color:#022;
+    border:none;
+    padding:10px 14px;
+    border-radius:8px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button:disabled{opacity:.4;cursor:default}
 
-  /* Modal 3D and zoom */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999}
-  .modal.open{display:flex}
-  .modal .card{background:#fff;border-radius:10px;max-width:960px;width:96%;padding:12px}
-  .zoom{position:fixed;right:18px;top:18px;background:#fff;border-radius:8px;padding:6px;box-shadow:var(--shadow)}
+  /* Responsive */
+  @media (max-width:800px){
+    .card{max-width:100%}
+    .card img{height:220px}
+    .viewport{height:64vh}
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <img class="logo" src="images/p1-cover.jpg" alt="logo">
-    <div>
-      <h1>Catálogo - Flores Limpiapipas</h1>
-      <div style="color:var(--muted)">Hojea y pide por WhatsApp</div>
-    </div>
+  <main class="catalog" role="main" aria-label="Catálogo">
+    <div class="viewport" id="viewport">
+      <div class="pages" id="pages">
+        <!-- Página 1 -->
+        <section class="page" aria-label="Página 1">
+          <article class="card">
+            <img src="images/page1.jpg" alt="Producto 1">
+            <h3>Producto 1</h3>
+            <p>Descripción corta del producto 1. Características principales y uso.</p>
+            <div class="price">$199</div>
+          </article>
 
-    <div class="meta">
-      <a id="shareWaTop" class="whatsapp-btn" href="#" target="_blank">Pedir por WhatsApp</a>
-    </div>
-  </header>
+          <article class="card">
+            <img src="images/page2.jpg" alt="Producto 2">
+            <h3>Producto 2</h3>
+            <p>Descripción corta del producto 2. Información técnica clave.</p>
+            <div class="price">$249</div>
+          </article>
 
-  <div class="book-wrap">
-    <div class="book" id="book"></div>
+          <article class="card">
+            <img src="images/page3.jpg" alt="Producto 3">
+            <h3>Producto 3</h3>
+            <p>Breve descripción, ventajas y estado.</p>
+            <div class="price">$299</div>
+          </article>
+        </section>
+
+        <!-- Página 2 -->
+        <section class="page" aria-label="Página 2">
+          <article class="card">
+            <img src="images/page4.jpg" alt="Producto 4">
+            <h3>Producto 4</h3>
+            <p>Descripción del producto 4.</p>
+            <div class="price">$179</div>
+          </article>
+
+          <article class="card">
+            <img src="images/page5.jpg" alt="Producto 5">
+            <h3>Producto 5</h3>
+            <p>Descripción del producto 5.</p>
+            <div class="price">$219</div>
+          </article>
+
+          <article class="card">
+            <img src="images/page6.jpg" alt="Producto 6">
+            <h3>Producto 6</h3>
+            <p>Descripción del producto 6.</p>
+            <div class="price">$349</div>
+          </article>
+        </section>
+
+        <!-- Agrega más <section class="page">...</section> según necesites -->
+      </div>
+    </div>
 
     <div class="controls">
       <div class="nav">
-        <button id="prev" class="btn ghost">❮ Anterior</button>
-        <button id="next" class="btn">Siguiente ❯</button>
+        <button id="prevBtn" type="button">« Anterior</button>
+        <button id="nextBtn" type="button">Siguiente »</button>
       </div>
-
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="downloadPDF" class="btn ghost">Descargar PDF</button>
-        <button id="shareLink" class="btn ghost">Compartir</button>
-      </div>
+      <div class="pageIndicator" id="pageIndicator">Página 1 / 2</div>
     </div>
-
-    <div class="thumbs" id="thumbs"></div>
-  </div>
-</div>
-
-<!-- Modal 3D -->
-<div class="modal" id="modal3d" aria-hidden="true">
-  <div class="card">
-    <header style="display:flex;justify-content:space-between;align-items:center">
-      <strong id="modalTitle">Producto</strong>
-      <button onclick="closeModal()">Cerrar ✕</button>
-    </header>
-    <div style="margin-top:8px">
-      <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-      <model-viewer id="modelViewer" alt="3D" camera-controls auto-rotate style="width:100%;height:520px;background:#f7f7f7"></model-viewer>
-    </div>
-  </div>
-</div>
+  </main>
 
 <script>
-/* ---------------------------
-   CONFIGURA AQUI TU NÚMERO WA
-   --------------------------- */
-const waNumber = '5215571113009'; // <- tu número (ya puesto)
+  (function(){
+    const pagesEl = document.getElementById('pages');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
 
-/* ======== Productos (edítalos) =========
- imgA = imagen principal; imgB = imagen secundaria (para la otra página).
- Añade o quita objetos según necesites.
-*/
-const products = [
-  { title:'Ramo 1', desc:'8 rosas + eucalipto. Empaque rústico.', price:350, imgA:'images/p1-cover.jpg', imgB:'images/p1-2.jpg', glb:'' },
-  { title:'Ramo 2', desc:'Ramo mediano con flores de temporada.', price:420, imgA:'images/p2-cover.jpg', imgB:'images/p2-2.jpg', glb:'' },
-  { title:'Ramo 3', desc:'Ramo colorido', price:320, imgA:'images/p3-cover.jpg', imgB:'images/p3-2.jpg', glb:'' },
-  { title:'Ramo 4', desc:'Para regalo especial', price:480, imgA:'images/p4-cover.jpg', imgB:'images/p4-2.jpg', glb:'' },
-  { title:'Ramo 5', desc:'Bouquet premium', price:600, imgA:'images/p5-cover.jpg', imgB:'images/p5-2.jpg', glb:'' }
-];
+    const pages = Array.from(document.querySelectorAll('.page'));
+    let current = 0;
 
-/* ---------------------------
-   GENERAR LA "REVISTA" DINÁMICA
-   Cada producto ocupa dos mitades (lado derecho/izquierdo).
-   Las "pages" se apilan y se voltean simulando un libro.
---------------------------- */
-const bookEl = document.getElementById('book');
-const thumbsEl = document.getElementById('thumbs');
-const shareTop = document.getElementById('shareWaTop');
-let currentSpread = 0; // índice de producto (cada item -> spread)
-
-// función para crear una página (spread) que contiene dos "lados"
-function createSpread(idx){
-  const prod = products[idx] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'};
-  const page = document.createElement('div');
-  page.className = 'page';
-  page.dataset.index = idx;
-  page.dataset.state = 'stacked'; // stacked or flipped
-  // left side (for visual - when mobile it stacks)
-  const left = document.createElement('div');
-  left.className = 'side';
-  const imgL = document.createElement('img'); imgL.src = prod.imgA; imgL.alt = prod.title;
-  left.appendChild(imgL);
-  const tL = document.createElement('h2'); tL.innerText = prod.title; left.appendChild(tL);
-  const pL = document.createElement('p'); pL.innerText = prod.desc; left.appendChild(pL);
-  const priceL = document.createElement('div'); priceL.className = 'price'; priceL.innerText = '$'+prod.price+' MXN'; left.appendChild(priceL);
-
-  // right side
-  const right = document.createElement('div');
-  right.className = 'side';
-  const imgR = document.createElement('img'); imgR.src = prod.imgB; imgR.alt = prod.title+' detalle';
-  right.appendChild(imgR);
-  const tR = document.createElement('h2'); tR.innerText = prod.title; right.appendChild(tR);
-  const pR = document.createElement('p'); pR.innerText = prod.desc; right.appendChild(pR);
-  const priceR = document.createElement('div'); priceR.className = 'price'; priceR.innerText = '$'+prod.price+' MXN'; right.appendChild(priceR);
-
-  page.appendChild(left);
-  page.appendChild(right);
-
-  // set side orientation: even index -> right origin, odd -> left origin (for stacking)
-  if(idx % 2 === 0){
-    page.dataset.side = 'right';
-    page.style.transformOrigin = 'left center';
-  } else {
-    page.dataset.side = 'left';
-    page.style.transformOrigin = 'right center';
-  }
-
-  // click to open 3D modal on image
-  imgL.style.cursor = imgR.style.cursor = 'pointer';
-  imgL.onclick = () => openModal(idx);
-  imgR.onclick = () => openModal(idx);
-
-  return page;
-}
-
-// create spreads and thumbs
-for(let i=0;i<products.length;i++){
-  const sp = createSpread(i);
-  // z-index stacking: later pages below earlier ones
-  sp.style.zIndex = (100 - i);
-  bookEl.appendChild(sp);
-
-  // thumb
-  const th = document.createElement('img');
-  th.src = products[i].imgA;
-  th.dataset.index = i;
-  th.onclick = ()=>goToSpread(i);
-  if(i===0) th.classList.add('active');
-  thumbsEl.appendChild(th);
-}
-
-// navigation handlers
-document.getElementById('next').onclick = ()=>{ flipNext(); }
-document.getElementById('prev').onclick = ()=>{ flipPrev(); }
-document.getElementById('shareLink').onclick = ()=>{ navigator.clipboard.writeText(location.href).then(()=>alert('Link copiado al portapapeles')); }
-document.getElementById('downloadPDF').onclick = ()=>{ window.print(); }
-
-// update share link button
-function updateShareLink(){
-  const sample = products[currentSpread] ? products[currentSpread].title : 'Consulta';
-  const message = encodeURIComponent('Hola, quiero pedir: '+sample+' - ¿tienen en existencia?');
-  shareTop.href = `https://wa.me/${waNumber}?text=${message}`;
-}
-updateShareLink();
-
-// flipping logic
-function flipNext(){
-  const max = products.length - 1;
-  if(currentSpread < max){
-    const page = bookEl.querySelector('.page[data-index="'+currentSpread+'"]');
-    if(page){
-      page.dataset.state = 'flipped';
-      // update thumb active
-      const next = currentSpread+1;
-      setActiveThumb(next);
-      currentSpread++;
-      updateShareLink();
+    function update(){
+      // mueve el wrapper horizontalmente; evita z-index/ghost problems
+      pagesEl.style.transform = `translateX(-${current * 100}%)`;
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === pages.length - 1;
+      pageIndicator.textContent = `Página ${current + 1} / ${pages.length}`;
     }
-  } else {
-    // loop to start
-    // optional: alert('Llegaste al final');
-  }
-}
-function flipPrev(){
-  if(currentSpread > 0){
-    const prevIndex = currentSpread-1;
-    const page = bookEl.querySelector('.page[data-index="'+prevIndex+'"]');
-    if(page){
-      page.dataset.state = 'stacked';
-      setActiveThumb(prevIndex);
-      currentSpread = prevIndex;
-      updateShareLink();
-    }
-  } else {
-    // at start
-  }
-}
-function goToSpread(i){
-  // simple approach: unflip pages before i and flip those < i
-  products.forEach((p, idx)=> {
-    const pg = bookEl.querySelector('.page[data-index="'+idx+'"]');
-    if(!pg) return;
-    if(idx < i) pg.dataset.state = 'flipped';
-    else pg.dataset.state = 'stacked';
-  });
-  setActiveThumb(i);
-  currentSpread = i;
-  updateShareLink();
-}
-function setActiveThumb(i){
-  document.querySelectorAll('#thumbs img').forEach(img=>img.classList.remove('active'));
-  const t = document.querySelector('#thumbs img[data-index="'+i+'"]');
-  if(t) t.classList.add('active');
-}
 
-/* Modal 3D logic */
-const modal = document.getElementById('modal3d');
-function openModal(idx){
-  const prod = products[idx];
-  document.getElementById('modalTitle').innerText = prod.title + ' — $' + prod.price + ' MXN';
-  const mv = document.getElementById('modelViewer');
-  if(prod.glb && prod.glb.length>0){
-    mv.src = prod.glb;
-  } else {
-    // no glb: show primary image
-    mv.src = ''; // empty
-    // we can replace the model-viewer with an image fallback if desired
-    // simple fallback alert:
-    alert('No hay modelo 3D para este producto. Mostrando imagen en el catálogo.');
-  }
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden','false');
-}
-function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+    prevBtn.addEventListener('click', ()=>{ if(current>0){ current--; update(); }});
+    nextBtn.addEventListener('click', ()=>{ if(current < pages.length-1){ current++; update(); }});
 
-/* keyboard support */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'ArrowRight') flipNext();
-  if(e.key === 'ArrowLeft') flipPrev();
-  if(e.key === 'Escape') closeModal();
-});
+    // Manejo básico de teclado (flechas)
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'ArrowLeft') prevBtn.click();
+      if(e.key === 'ArrowRight') nextBtn.click();
+    });
 
-/* touch swipe support for mobile */
-let touchStartX = 0;
-bookEl.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; }, {passive:true});
-bookEl.addEventListener('touchend', (e)=>{
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if(dx < -40) flipNext();
-  if(dx > 40) flipPrev();
-}, {passive:true});
+    // Init: comprueba imágenes faltantes y ajusta tamaño si hace falta
+    window.addEventListener('load', ()=>{
+      // detecta images que no cargaron
+      document.querySelectorAll('img').forEach(img=>{
+        img.addEventListener('error', ()=>{
+          img.style.background = '#2b2b2b';
+          img.alt = 'Imagen no disponible';
+        });
+      });
+      update();
+    });
 
+    // Protege contra reflow extraño si la página se redimensiona
+    window.addEventListener('resize', ()=> {
+      // forcing repaint en casos raros
+      pagesEl.style.transition = 'none';
+      requestAnimationFrame(()=> pagesEl.style.transition = '');
+    });
+  })();
 </script>
 </body>
 </html>
