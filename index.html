@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Catálogo Flipbook - Limpiapipas</title>
+<style>
+  :root{--bg:#f3f4f6;--paper:#fff;--accent:#0f62fe}
+  body{font-family:Inter,system-ui,Segoe UI,Arial;margin:0;background:var(--bg);color:#111}
+  .wrap{max-width:980px;margin:28px auto;padding:14px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  header h1{font-size:20px;margin:0}
+  .viewer{background:linear-gradient(180deg,#fff,#fafafa);border-radius:8px;box-shadow:0 8px 30px rgba(2,6,23,.08);padding:18px}
+  .book{width:100%;height:600px;display:flex;align-items:center;justify-content:center;position:relative}
+  .page{width:47%;height:540px;background:var(--paper);box-shadow:0 4px 12px rgba(2,6,23,.06);border-radius:6px;padding:18px;box-sizing:border-box;overflow:hidden}
+  .page img{width:100%;height:340px;object-fit:cover;border-radius:6px}
+  .page h2{margin:10px 0 6px;font-size:18px}
+  .page p{margin:0;font-size:13px;color:#444}
+  .pager{position:absolute;left:10px;right:10px;bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+  .btn.secondary{background:#fff;color:var(--accent);border:1px solid rgba(15,98,254,.14)}
+  .controls{position:absolute;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;pointer-events:none}
+  .controls button{pointer-events:auto;background:rgba(0,0,0,.06);border:0;padding:12px;border-radius:50%;cursor:pointer}
+  .meta{display:flex;gap:8px;align-items:center}
+  .thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .thumbs img{width:86px;height:86px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .thumbs img.active{border-color:var(--accent)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal.open{display:flex}
+  .modal .card{width:92%;max-width:900px;background:#fff;border-radius:10px;padding:12px}
+  .modal header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .whatsapp{background:#25D366;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none}
+  @media (max-width:900px){
+    .book{flex-direction:column;height:auto}
+    .page{width:100%;height:auto;margin-bottom:10px}
+  }
+  footer{max-width:980px;margin:8px auto;text-align:center;color:#666;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="images/p1-cover.jpg" alt="logo" style="width:56px;height:56px;border-radius:8px;object-fit:cover"/>
+    <div>
+      <h1>Catálogo - Flores Limpiapipas</h1>
+      <small style="color:#666">Hojea y comparte por WhatsApp</small>
+    </div>
+    <div style="margin-left:auto" class="meta">
+      <a id="shareWa" class="whatsapp" href="#" target="_blank">Pedir por WhatsApp</a>
+    </div>
+  </header>
+
+  <div class="viewer">
+    <div class="book" id="book">
+      <div class="page" id="leftPage">
+        <img id="leftImg" src="images/p1-cover.jpg" alt="portada">
+        <h2 id="leftTitle">Ramo 1</h2>
+        <p id="leftDesc">Descripción corta</p>
+        <div style="margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:space-between">
+          <div style="font-weight:700" id="leftPrice">$350 MXN</div>
+          <div>
+            <button class="btn" onclick="open3D()">Ver 3D</button>
+            <button class="btn secondary" onclick="addToCart()">Añadir</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="width:6%"></div>
+
+      <div class="page" id="rightPage">
+        <img id="rightImg" src="images/p2-cover.jpg" alt="detalle">
+        <h2 id="rightTitle">Ramo 2</h2>
+        <p id="rightDesc">Descripción corta</p>
+        <div style="margin-top:10px;display:flex;gap:6px;align-items:center;justify-content:space-between">
+          <div style="font-weight:700" id="rightPrice">$420 MXN</div>
+          <div>
+            <button class="btn" onclick="open3D()">Ver 3D</button>
+            <button class="btn secondary" onclick="addToCart()">Añadir</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" title="Anterior" onclick="prevPage()">❮</button>
+        <button id="nextBtn" title="Siguiente" onclick="nextPage()">❯</button>
+      </div>
+    </div>
+
+    <div class="pager">
+      <div class="thumbs" id="thumbs">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn secondary" onclick="downloadPDF()">Descargar PDF</button>
+        <button class="btn" onclick="openShare()">Compartir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3D -->
+<div class="modal" id="modal3d" aria-hidden="true">
+  <div class="card">
+    <header>
+      <div>
+        <strong id="modalTitle">Ramo</strong>
+        <div style="font-size:12px;color:#666" id="modalPrice">$0 MXN</div>
+      </div>
+      <button onclick="close3D()">Cerrar ✕</button>
+    </header>
+
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <model-viewer id="modelViewer" src="" alt="3D model" ar ar-modes="scene-viewer quick-look webxr" camera-controls auto-rotate style="width:100%;height:520px;background:#f7f7f7"></model-viewer>
+  </div>
+</div>
+
+<footer>Hecho con ❤️ por Limpiapipas — comparte el catálogo por WhatsApp</footer>
+
+<script>
+const waNumber = '5215512345678'; // <--- cambia esto por tu número real
+
+const products = [
+  { title:'Ramo 1', desc:'Bonito ramo pequeño', price:350, imgA:'images/p1-cover.jpg', imgB:'images/p1-2.jpg', glb:'' },
+  { title:'Ramo 2', desc:'Ramo mediano', price:420, imgA:'images/p2-cover.jpg', imgB:'images/p2-2.jpg', glb:'' },
+  { title:'Ramo 3', desc:'Ramo color', price:320, imgA:'images/p3-cover.jpg', imgB:'images/p3-2.jpg', glb:'' },
+  { title:'Ramo 4', desc:'Ramo para regalo', price:480, imgA:'images/p4-cover.jpg', imgB:'images/p4-2.jpg', glb:'' },
+  { title:'Ramo 5', desc:'Bouquet especial', price:600, imgA:'images/p5-cover.jpg', imgB:'images/p5-2.jpg', glb:'' }
+];
+
+let pageIndex = 0;
+
+function renderPages(){
+  const left = products[pageIndex] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'}
+  const right = products[pageIndex+1] || {title:'',desc:'',price:'',imgA:'images/placeholder.png',imgB:'images/placeholder.png'}
+  document.getElementById('leftImg').src = left.imgA; document.getElementById('leftTitle').innerText = left.title; document.getElementById('leftDesc').innerText = left.desc;
+  document.getElementById('leftPrice').innerText = '$'+left.price+' MXN';
+  document.getElementById('rightImg').src = right.imgA; document.getElementById('rightTitle').innerText = right.title; document.getElementById('rightDesc').innerText = right.desc;
+  document.getElementById('rightPrice').innerText = right.price ? '$'+right.price+' MXN' : '';
+  const sample = (left.title || 'Consulta');
+  const message = encodeURIComponent('Hola, quiero pedir: '+sample+' - ¿tienen en existencia?');
+  document.getElementById('shareWa').href = `https://wa.me/${waNumber}?text=${message}`;
+  document.querySelectorAll('#thumbs img').forEach(img=>img.classList.remove('active'));
+  const t = document.querySelector('#thumbs img[data-index="'+pageIndex+'"]'); if(t) t.classList.add('active');
+}
+
+function nextPage(){ if(pageIndex+2 < products.length) pageIndex += 2; renderPages(); }
+function prevPage(){ if(pageIndex-2 >= 0) pageIndex -= 2; renderPages(); }
+function goTo(idx){ pageIndex = idx; renderPages(); }
+function openShare(){ window.open(document.getElementById('shareWa').href,'_blank') }
+function addToCart(){ alert('Añadido al carrito (demo)') }
+
+function open3D(){
+  const prod = products[pageIndex] || products[0];
+  const modal = document.getElementById('modal3d');
+  document.getElementById('modalTitle').innerText = prod.title;
+  document.getElementById('modalPrice').innerText = '$'+prod.price+' MXN';
+  const mv = document.getElementById('modelViewer');
+  if(prod.glb && prod.glb.length>0){
+    mv.src = prod.glb;
+  } else {
+    mv.src = '';
+  }
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+}
+function close3D(){ const modal = document.getElementById('modal3d'); modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); }
+
+function downloadPDF(){
+  alert('Para PDF final y profesional usa Canva o Google Slides. Esta opción abre imprimir (guardar como PDF desde navegador).');
+  window.print();
+}
+
+(function initThumbs(){
+  const thumbs = document.getElementById('thumbs');
+  thumbs.innerHTML = '';
+  for(let i=0;i<products.length;i++){
+    const img = document.createElement('img');
+    img.src = products[i].imgA;
+    img.dataset.index = i;
+    img.onclick = ()=>goTo(i);
+    if(i===0) img.classList.add('active');
+    thumbs.appendChild(img);
+  }
+  renderPages();
+})(); 
+</script>
+</body>
+</html>
